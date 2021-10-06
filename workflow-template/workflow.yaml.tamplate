@@ -1,0 +1,74 @@
+name: Product-name Github workflow
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches: 
+      - main
+      - develop
+
+env:
+  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
+concurrency: 
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  Name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: environment provisioning
+        run: echo "environment provisioning"
+      - name: pre-build (optional)
+        run: echo "pre-build"
+      - name: build
+        run: echo "build"
+      - name: pre-test (optional)
+        run: echo "pre-test"
+      - name: test
+        run: echo "test"
+      - name: package
+        run: echo "package"
+      - name: upload
+        uses: action/upload-nexus-maven@v1
+        with:
+          serverUrl: https://nexus.devfactory.com/
+          username: $NEXUS_USERNAME
+          password: $NEXUS_PASSWORD
+          repository: maven-releases
+          coordinates: groupId=com.example artifactId=app version=1.0.0
+          assets: extension=jar
+          filename: ./target/app-1.0.0.jar
+      - name: deploy
+        run: |
+          DEPLOY_ENV="staging"
+          branch=${github.ref##*/}
+          if[ "$branch" = "main"]
+          then
+            DEPLOY_ENV="production"
+          fi
+          
+          bash scripts/deploy.sh $DEPLOY_ENV
+
+      - name: Check the deployed service URL
+        uses: action/healthcheck-api@v2
+        with:
+          # Check the following URLs one by one sequentially
+          url: https://example.com|http://example.com
+          # Follow redirects, or just report success on 3xx status codes
+          follow-redirect: no # Optional, defaults to "no"
+          # Fail this action after this many failed attempts
+          max-attempts: 3 # Optional, defaults to 1
+          # Delay between retries
+          retry-delay: 5s # Optional, only applicable to max-attempts > 1
+          # Retry all errors, including 404. This option might trigger curl upgrade.
+          retry-all: no # Optional, defaults to "no"
