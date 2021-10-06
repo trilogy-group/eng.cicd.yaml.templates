@@ -2,11 +2,8 @@ name: Product-name Github workflow
 
 on:
   push:
+  # keep only one branch, relative to the environment
     branches:
-      - main
-      - develop
-  pull_request:
-    branches: 
       - main
       - develop
 
@@ -23,7 +20,7 @@ jobs:
   provision-environment:
     runs-on: ubuntu-latest
     steps:
-      - id: Checkout
+      - id: checkout
         name: Checkout the source code. # (needed if envirnment provisiong needs any scripts from repository)
         uses: actions/checkout@v2
         with:
@@ -74,7 +71,7 @@ jobs:
       - id: integration-test
       - name: Run the integration test
         run: echo "run integration test"
-  healthcheck:
+  health-check:
     runs-on: ubuntu-latest
     needs: deploy
     steps:        
