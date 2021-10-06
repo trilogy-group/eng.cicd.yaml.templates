@@ -57,7 +57,7 @@ jobs:
             DEPLOY_ENV="production"
           fi
           
-          bash scripts/deploy.sh $DEPLOY_ENV
+          echo "deploy to $DEPLOY_ENV environment"
 
       - name: Check the deployed service URL
         uses: action/healthcheck-api@v2
