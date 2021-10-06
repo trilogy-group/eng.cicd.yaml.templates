@@ -11,8 +11,8 @@ on:
       - branch2
 
 env:
-  GLOBAL_ENV_VAR_NAME_1: "value"
-  GLOBAL_ENV_VAR_NAME_2: "value"
+  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
 concurrency: 
   group: ci-${{ github.head_ref }}
@@ -32,6 +32,7 @@ jobs:
         run: echo "install software libraries"
   build:
     runs-on: ubuntu-latest
+    needs: provision
     env:
       ENV_VAR_NAME_1: "value"
       ENV_VAR_NAME_2: "value"
@@ -42,6 +43,7 @@ jobs:
         run: echo "build"
   test:
     runs-on: ubuntu-latest
+    needs: build
     env:
       ENV_VAR_NAME_1: "value"
       ENV_VAR_NAME_2: "value"
@@ -52,9 +54,10 @@ jobs:
         run: echo "test"
   package:
     runs-on: ubuntu-latest
+    needs: test
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      ENV_VAR_NAME_1: "value"
+      ENV_VAR_NAME_2: "value"
     steps:
       - name: package
         run: echo "package"
@@ -69,3 +72,20 @@ jobs:
           coordinates: groupId=com.example artifactId=app version=1.0.0
           assets: extension=jar
           filename: ./target/app-1.0.0.jar
+  healthcheck:
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+    - name: Check the deployed service URL
+      uses: jtalk/url-health-check-action@v2
+      with:
+        # Check the following URLs one by one sequentially
+        url: https://nexus.devfactory.com/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
+        # Follow redirects, or just report success on 3xx status codes
+        follow-redirect: no # Optional, defaults to "no"
+        # Fail this action after this many failed attempts
+        max-attempts: 3 # Optional, defaults to 1
+        # Delay between retries
+        retry-delay: 5s # Optional, only applicable to max-attempts > 1
+        # Retry all errors, including 404. This option might trigger curl upgrade.
+        retry-all: no # Optional, defaults to "no"
