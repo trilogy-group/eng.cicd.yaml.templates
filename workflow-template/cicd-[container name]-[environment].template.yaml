@@ -20,27 +20,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
- [environment]:
+  provision-environment:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - id: Checkout
+        name: Checkout the source code. # (needed if envirnment provisiong needs any scripts from repository)
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: environment provisioning
-        run: echo "environment provisioning"
-      - name: pre-build (optional)
+        run: echo "provision environment"
+  build:
+    runs-on: ubuntu-latest
+    needs: provision-environment
+    steps:
+      - id: Checkout
+        name: Checkout the source code.
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - id: pre-build
+        name: pre-build (optional)
         run: echo "pre-build"
-      - name: build
+      - id: build
+        name: build
         run: echo "build"
-      - name: pre-test (optional)
+      - id: pre-test
+        name: pre-test (optional)
         run: echo "pre-test"
-      - name: test
+      - id: test
+        name: test
         run: echo "test"
-      - name: package
+      - id: package
+        name: package
         run: echo "package"
-      - name: upload
-        uses: action/upload-nexus-maven@v1
+      - id: upload
+        name: upload to nexus
+        uses: action/eng-cicd-upload-nexus-maven@v1
         with:
           serverUrl: https://nexus.devfactory.com/
           username: $NEXUS_USERNAME
@@ -49,10 +65,20 @@ jobs:
           coordinates: groupId=com.example artifactId=app version=1.0.0
           assets: extension=jar
           filename: ./target/app-1.0.0.jar
-      - name: deploy
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deploy
+        name: deploy the application
         run: echo "deploy to $DEPLOY_ENV environment"
-      - name: Check the deployed service URL
-        uses: action/healthcheck-api@v2
+  healthcheck:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:        
+      - id: healthcheck
+        name: Check the deployed service URL
+        uses: action/eng-cicd-healthcheck-api@v2
         with:
           # Check the following URLs one by one sequentially
           url: https://example.com|http://example.com
@@ -64,5 +90,10 @@ jobs:
           retry-delay: 5s # Optional, only applicable to max-attempts > 1
           # Retry all errors, including 404. This option might trigger curl upgrade.
           retry-all: no # Optional, defaults to "no"
-      - name: Integration Test
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: healthcheck
+    steps:        
+      - id: integration-test
+      - name: Run the integration test
         run: echo "run integration test"
