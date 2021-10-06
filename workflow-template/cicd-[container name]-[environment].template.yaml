@@ -13,13 +13,14 @@ on:
 env:
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
   NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  DEPLOY_ENV: "production|qa|staging"
 
 concurrency: 
   group: ${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
-  Name:
+ [environment]:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,16 +50,7 @@ jobs:
           assets: extension=jar
           filename: ./target/app-1.0.0.jar
       - name: deploy
-        run: |
-          DEPLOY_ENV="staging"
-          branch=${github.ref##*/}
-          if[ "$branch" = "main"]
-          then
-            DEPLOY_ENV="production"
-          fi
-          
-          echo "deploy to $DEPLOY_ENV environment"
-
+        run: echo "deploy to $DEPLOY_ENV environment"
       - name: Check the deployed service URL
         uses: action/healthcheck-api@v2
         with:
@@ -72,3 +64,5 @@ jobs:
           retry-delay: 5s # Optional, only applicable to max-attempts > 1
           # Retry all errors, including 404. This option might trigger curl upgrade.
           retry-all: no # Optional, defaults to "no"
+      - name: Integration Test
+        run: echo "run integration test"
