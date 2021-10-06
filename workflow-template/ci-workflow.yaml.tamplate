@@ -1,0 +1,69 @@
+name: Product-name CI
+
+on:
+  push:
+    branches:
+      - main
+      - branch2
+  pull_request:
+    branches: 
+      - main
+      - branch2
+
+env:
+  GLOBAL_ENV_VAR_NAME_1: "value"
+  GLOBAL_ENV_VAR_NAME_2: "value"
+
+concurrency: 
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    env:
+      ENV_VAR_NAME_1: "value"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ENV_VAR_NAME_1: "value"
+      ENV_VAR_NAME_2: "value"
+    steps:
+      - name: pre-build (optional)
+        run: echo "pre-build"
+      - name: build
+        run: echo "build"
+  test:
+    runs-on: ubuntu-latest
+    env:
+      ENV_VAR_NAME_1: "value"
+      ENV_VAR_NAME_2: "value"
+    steps:
+      - name: pre-test (optional)
+        run: echo "pre-test"
+      - name: test
+        run: echo "test"
+  package:
+    runs-on: ubuntu-latest
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - name: package
+        run: echo "package"
+      - name: upload
+        uses: sonatype-nexus-community/nexus-repo-github-action@master
+        with:
+          serverUrl: https://nexus.devfactory.com/
+          username: $NEXUS_USERNAME
+          password: $NEXUS_PASSWORD
+          format: maven2
+          repository: maven-releases
+          coordinates: groupId=com.example artifactId=app version=1.0.0
+          assets: extension=jar
+          filename: ./target/app-1.0.0.jar
