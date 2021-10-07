@@ -46,6 +46,9 @@ jobs:
       - id: unit-test
         name: Run unit tests
         run: echo "test"
+      - id: analysis
+        name: Run code analysis
+        run: echo "Run code analysis"
       - id: publish
         name: Publish artifact
         uses: publish-devfactory-nexus@v1

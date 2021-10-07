@@ -1,0 +1,68 @@
+name: Product-name Github workflow
+
+on:
+  push:
+  # keep only one branch, relative to the environment
+    branches:
+      - main
+      - develop
+
+env:
+  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  DEPLOY_ENV: "production|qa|staging"
+
+concurrency: 
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout the source code.
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - id: setup
+        name: Setup
+        run: echo "pre-build"
+      - id: build
+        name: Build the code
+        run: echo "build"
+      - id: unit-test
+        name: Run unit tests
+        run: echo "test"
+      - id: analysis
+        name: Run code analysis
+        run: echo "Run code analysis"
+      - id: publish
+        name: Publish artifact
+        uses: publish-devfactory-nexus@v1
+        with:
+          serverUrl: https://nexus.devfactory.com/
+          username: $NEXUS_USERNAME
+          password: $NEXUS_PASSWORD
+          repository: maven-releases
+          coordinates: groupId=com.example artifactId=app version=1.0.0
+          assets: extension=jar
+          filename: ./target/app-1.0.0.jar
+  health-check:
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+    - id: health-check
+      name: Check the published package
+      uses: healthcheck-httpStatus@v1
+      with:
+        # Check the following URLs one by one sequentially
+        url: https://nexus.devfactory.com/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
+        # Follow redirects, or just report success on 3xx status codes
+        follow-redirect: no # Optional, defaults to "no"
+        # Fail this action after this many failed attempts
+        max-attempts: 3 # Optional, defaults to 1
+        # Delay between retries
+        retry-delay: 5s # Optional, only applicable to max-attempts > 1
+        # Retry all errors, including 404. This option might trigger curl upgrade.
+        retry-all: no # Optional, defaults to "no"
