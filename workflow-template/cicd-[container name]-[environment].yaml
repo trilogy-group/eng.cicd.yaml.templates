@@ -1,4 +1,4 @@
-name: Product-name Github workflow
+name: CI/CD [container-name]-[environment]
 
 on:
   push:
