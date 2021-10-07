@@ -1,16 +1,15 @@
+# Standard Eng.YAML CICD template
 name: CI/CD [container-name]-[environment]
 
 on:
   push:
-  # keep only one branch, relative to the environment
-    branches:
+    branches:   # Only one branch should be selected here, the one mapping to the envrionment this workflow deploys to
       - main
       - develop
-
 env:
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
   NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-  DEPLOY_ENV: "production|qa|staging"
+  DEPLOY_ENV: "production|qa|staging" # replace with actual value
 
 concurrency: 
   group: ${{ github.head_ref }}
@@ -21,37 +20,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: checkout
-        name: Checkout the source code. # (needed if envirnment provisiong needs any scripts from repository)
+        name: Checkout environment source code # OPTIONAL If environment provisiong needs scripts from repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - id: provision-environment
-        name: Provision environment
-        run: echo "provision environment"
+        name: Provision environment for this container
+        run: echo "provision environment" # replace with actual code
   build:
     runs-on: ubuntu-latest
     needs: provision-environment
     steps:
       - id: checkout
-        name: Checkout the source code.
+        name: Checkout container source code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - id: setup
-        name: Setup
-        run: echo "pre-build"
+        name: Prepare build server 
+        run: echo "pre-build" # replace with actual code
       - id: build
-        name: Build the code
-        run: echo "build"
+        name: Build the container code
+        run: echo "build" # replace with actual code
       - id: unit-test
         name: Run unit tests
-        run: echo "test"
-      - id: analysis
+        run: echo "test" # replace with actual code
+      - id: analysis  # OPTIONAL
         name: Run code analysis
-        run: echo "Run code analysis"
-      - id: publish
-        name: Publish artifact
-        uses: publish-devfactory-nexus@v1
+        run: echo "Run code analysis" # replace with actual code
+      - id: publish # OPTIONAL
+        name: Publish built artifacts
+        uses: publish-devfactory-nexus@v1 # example action for Devfactory Nexus
         with:
           serverUrl: https://nexus.devfactory.com/
           username: $NEXUS_USERNAME
@@ -65,22 +64,22 @@ jobs:
     needs: build
     steps:
       - id: deploy
-        name: Deploy the application
-        run: echo "deploy to $DEPLOY_ENV environment"
+        name: Deploy the container
+        run: echo "deploy to $DEPLOY_ENV environment" # replace with actual code
   integration-test:
     runs-on: ubuntu-latest
     needs: deploy
     steps:        
       - id: integration-test
-      - name: Run the integration test
-        run: echo "run integration test"
+      - name: Run integration tests on container
+        run: echo "run integration test" # replace with actual code
   health-check:
     runs-on: ubuntu-latest
     needs: deploy
     steps:        
       - id: health-check
-        name: Check the deployed service
-        uses: healthcheck-httpStatus@v1
+        name: Run health check on deployed artifacts
+        uses: healthcheck-httpStatus@v1 # example action using http status
         with:
           # Check the following URLs one by one sequentially
           url: https://example.com|http://example.com
