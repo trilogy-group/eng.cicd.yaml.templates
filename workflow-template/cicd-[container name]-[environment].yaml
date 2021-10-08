@@ -4,7 +4,6 @@ name: CI/CD [container-name]-[environment]
 on:
   push:
     branches:   # Only one branch should be selected here, the one mapping to the envrionment this workflow deploys to
-      - main
       - develop
 env:
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -16,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  provision-environment:
+  PROVISION-ENVIRONMENT:
     runs-on: ubuntu-latest
     steps:
       - id: checkout
@@ -24,60 +23,59 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - id: provision-environment
+      - id: PROVISION-ENVIRONMENT
         name: Provision environment for this container
         run: echo "provision environment" # replace with actual code
-  build:
+  BUILD:
     runs-on: ubuntu-latest
     needs: provision-environment
     steps:
-      - id: checkout
+      - id: CHECKOUT
         name: Checkout container source code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - id: setup
+      - id: SETUP
         name: Prepare build server 
         run: echo "pre-build" # replace with actual code
-      - id: build
+      - id: BUILD
         name: Build the container code
         run: echo "build" # replace with actual code
-      - id: unit-test
+      - id: UNIT-TEST
         name: Run unit tests
         run: echo "test" # replace with actual code
-      - id: analysis  # OPTIONAL
+      - id: ANALYSIS  # OPTIONAL
         name: Run code analysis
         run: echo "Run code analysis" # replace with actual code
-      - id: publish # OPTIONAL
+      - id: PUBLISH # OPTIONAL
         name: Publish built artifacts
         uses: publish-devfactory-nexus@v1 # example action for Devfactory Nexus
         with:
-          serverUrl: https://nexus.devfactory.com/
           username: $NEXUS_USERNAME
           password: $NEXUS_PASSWORD
           repository: maven-releases
           coordinates: groupId=com.example artifactId=app version=1.0.0
           assets: extension=jar
           filename: ./target/app-1.0.0.jar
-  deploy:
+  DEPLOY:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - id: deploy
+      - id: DEPLOY
         name: Deploy the container
         run: echo "deploy to $DEPLOY_ENV environment" # replace with actual code
-  integration-test:
+  INTEGRATION-TEST:
     runs-on: ubuntu-latest
     needs: deploy
     steps:        
-      - id: integration-test
+      - id: INTEGRATION-TEST
       - name: Run integration tests on container
         run: echo "run integration test" # replace with actual code
-  health-check:
+  HEALTH-CHECK:
     runs-on: ubuntu-latest
     needs: deploy
     steps:        
-      - id: health-check
+      - id: HEALTH-CHECK
         name: Run health check on deployed artifacts
         uses: healthcheck-httpStatus@v1 # example action using http status
         with:
