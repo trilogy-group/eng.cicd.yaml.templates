@@ -11,8 +11,8 @@ env:
   DEPLOY_ENV: "production|qa|staging" # replace with actual value
 
 concurrency: 
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
+  group: eng-yaml
+  cancel-in-progress: false
 
 jobs:
   PROVISION-ENVIRONMENT:
