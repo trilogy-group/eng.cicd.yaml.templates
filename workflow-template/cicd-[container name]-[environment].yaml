@@ -1,5 +1,5 @@
 # Standard Eng.YAML CICD template
-name: CI/CD [container-name]-[environment]
+name: Publish/Deploy/Provision [container-name] to/for [environment]
 
 on:
   push:
