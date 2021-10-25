@@ -1,0 +1,51 @@
+import * as core from "@actions/core";
+import duration from "duration-js";
+import {
+  curl,
+  upgrade as upgradeCurl,
+  isVersion as isCurlVersion,
+} from "./curl";
+
+async function run() {
+  const urlString = core.getInput("url", { required: true });
+  const maxAttemptsString = core.getInput("max-attempts");
+  const timeoutString = core.getInput("timeout");
+  const retryDelay = core.getInput("retry-delay");
+  const followRedirect = core.getBooleanInput("follow-redirect");
+  const retryAll = core.getBooleanInput("retry-all");
+
+  const urls = urlString.split("|");
+  const retryDelaySeconds = duration.parse(retryDelay).seconds();
+  const maxAttempts = parseInt(maxAttemptsString);
+  const timeout = duration.parse(timeoutString).seconds();
+
+  if (retryAll) {
+    const isUpToDate = await isCurlVersion("7.71.0");
+    if (!isUpToDate) {
+      core.warning(
+        "The installed version of curl does not support retry-all-errors. " +
+          "It will be upgraded automatically. If you don't want this to happen, you need to either " +
+          "upgrade it manually, or turn off retry-all."
+      );
+      await upgradeCurl();
+    }
+  }
+
+  for (const url of urls) {
+    // We don't need to do it in parallel, we're going to have to
+    // wait for all of them anyway
+    await curl(url, {
+      maxAttempts,
+      retryDelaySeconds,      
+      retryAll,
+      followRedirect,
+      timeout
+    });
+  }
+
+  core.info("Success");
+}
+
+run().catch((e) => {
+  core.setFailed(e.message);
+});
