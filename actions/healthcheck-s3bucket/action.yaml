@@ -1,0 +1,10 @@
+name: 's3 healthcheck'
+description: 'Check that an s3 bucket has been created'
+inputs:
+  bucket-names:  # list of s3 buckets to check separated by |
+    description: 'Name of buckets to check'
+    required: true
+    default: 'bucket1|bucket2'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
