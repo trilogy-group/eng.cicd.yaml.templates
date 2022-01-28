@@ -1,0 +1,28 @@
+name: Container-name healthcheck for Staging
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DEPLOY_ENV: "staging"
+
+jobs:
+  HEALTH-CHECK:
+    runs-on: ubuntu-latest
+    steps: 
+      - id: health-check
+        name: Health check
+        run: |
+          curl --location --request POST 'https://vdr-master.vdr-devflows.devfactory.com/dfih-1937/n-18896-create-jira-tickets' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+              "acquisition_id": "1140",
+              "deploy": "2-Pre-Close"
+          }'
+          if [[ "$?" -eq "0" ]]; then
+              echo "Healthcheck Passed"
+          else
+              echo "Healthcheck Failed"
+          fi
