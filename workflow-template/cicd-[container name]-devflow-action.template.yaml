@@ -1,0 +1,77 @@
+name: Product-name Github workflow
+
+on:
+  push:
+  # keep only one branch, relative to the environment
+    branches:
+      - main
+      - develop
+
+env:
+  DEPLOY_ENV: "production|qa|staging"
+
+concurrency: 
+  group: eng-yaml
+  cancel-in-progress: false
+
+jobs:
+  BUILD:
+    runs-on: ubuntu-latest
+    name: Build and Push Docker image to ECR
+    steps:
+      - id: checkout
+        name: Checkout the source code.
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - id: Configure-AWS-credentials
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEVFLOWS_AWS_ACCESS_KEY_ID_PRODCENTRAL }}
+          aws-secret-access-key: ${{ secrets.DEVFLOWS_AWS_SECRET_ACCESS_KEY_PRODCENTRAL }}
+          aws-region: us-east-1
+
+      - id: login-ecr
+        name: Login to AWS ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - id: compute-Tag
+        name: Compute Tag
+        run: |
+          SHA=`echo ${GITHUB_SHA} | cut -c1-7`
+          echo "IMAGE_TAG=$(echo ${GITHUB_REF#refs/heads/}-${SHA} | sed "s/[^[:alnum:]]/-/g")" >> $GITHUB_ENV
+      - id: build-tag-push
+        name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: devflows/${{ github.repository }}
+        run: |
+          aws s3 cp s3://devflows-function-framework/python/setup.sh ./setup.sh
+          chmod +x ./setup.sh
+          ./setup.sh
+          docker build -t ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} --build-arg GITHUB_TOKEN --build-arg GITHUB_REPOSITORY --build-arg GITHUB_RUN_ID .
+          docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+      - id: ecr-logout
+        name: Log out of Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+  HEALTH-CHECK:
+    runs-on: ubuntu-latest
+    needs: BUILD
+    steps:
+    - id: health-check
+      name: Dummy healthcheck
+      uses: healthcheck-httpStatus@v1
+      with:
+        # Check the following URLs one by one sequentially
+        url: https://www.google.com
+        # Follow redirects, or just report success on 3xx status codes
+        follow-redirect: no # Optional, defaults to "no"
+        # Fail this action after this many failed attempts
+        max-attempts: 3 # Optional, defaults to 1
+        # Delay between retries
+        retry-delay: 5s # Optional, only applicable to max-attempts > 1
+        # Retry all errors, including 404. This option might trigger curl upgrade.
+        retry-all: no # Optional, defaults to "no"
