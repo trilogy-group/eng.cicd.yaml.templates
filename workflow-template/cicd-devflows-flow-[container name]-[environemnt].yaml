@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  DEPLOY_ENV: "staging"
+    DEPLOY_ENV: "production|qa|staging"
 
 jobs:
   HEALTH-CHECK:
@@ -15,11 +15,11 @@ jobs:
       - id: health-check
         name: Health check
         run: |
-          curl --location --request POST 'https://vdr-master.vdr-devflows.devfactory.com/dfih-1937/n-18896-create-jira-tickets' \
+          curl --location --request POST '[[ deflows-public-trigger-url ]]' \
           --header 'Content-Type: application/json' \
           --data-raw '{
-              "acquisition_id": "1140",
-              "deploy": "2-Pre-Close"
+              "key-1": "value-1",
+              "key-2": "value-2"
           }'
           if [[ "$?" -eq "0" ]]; then
               echo "Healthcheck Passed"
