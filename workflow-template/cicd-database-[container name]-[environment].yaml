@@ -1,0 +1,44 @@
+# Standard Eng.YAML CICD template
+name: Publish/Deploy/Provision [container-name] to/for [environment]
+
+on:
+  push:
+    branches:   # Only one branch should be selected here, the one mapping to the envrionment this workflow deploys to
+      - main 
+      - develop
+env:
+  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  DEPLOY_ENV: "production|qa|staging" # replace with actual value
+
+concurrency: 
+  group: eng-yaml
+  cancel-in-progress: false
+
+jobs:
+  PROVISION-ENVIRONMENT:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout environment source code # OPTIONAL If environment provisiong needs scripts from repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - id: PROVISION-ENVIRONMENT
+        name: Provision environment for this container
+        run: echo "provision environment" # replace with actual code
+  DEPLOY:
+    runs-on: ubuntu-latest
+    needs: PROVISION-ENVIRONMENT
+    steps:
+      - id: DEPLOY
+        name: Initialize the database schema
+        run: echo "Initialize the database schema for $DEPLOY_ENV environment" # replace with actual code
+  HEALTH-CHECK:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+    - id: health-check
+      name: Check the deployed service
+      run: |
+        echo "verify database schema is properly initialized"
