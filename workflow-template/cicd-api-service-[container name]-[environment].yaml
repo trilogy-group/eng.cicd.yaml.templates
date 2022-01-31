@@ -4,6 +4,7 @@ name: Publish/Deploy/Provision [container-name] to/for [environment]
 on:
   push:
     branches:   # Only one branch should be selected here, the one mapping to the envrionment this workflow deploys to
+      - main 
       - develop
 env:
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
