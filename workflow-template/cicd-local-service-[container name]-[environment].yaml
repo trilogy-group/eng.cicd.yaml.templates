@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  PROVISION-ENVIRONMENT:
+  PROVISION-ENVIRONMENT: # optional
     runs-on: ubuntu-latest
     steps:
       - id: checkout
@@ -58,7 +58,7 @@ jobs:
           coordinates: groupId=com.example artifactId=app version=1.0.0
           assets: extension=jar
           filename: ./target/app-1.0.0.jar
-  DEPLOY:
+  DEPLOY: # optional
     runs-on: ubuntu-latest
     needs: build
     steps:
