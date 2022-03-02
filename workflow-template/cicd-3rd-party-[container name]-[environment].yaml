@@ -1,0 +1,62 @@
+# Standard Eng.YAML CICD template
+name: Publish/Deploy/Provision [container-name] to/for [environment]
+
+on:
+  push:
+    branches:   # Only one branch should be selected here, the one mapping to the envrionment this workflow deploys to
+      - develop
+env:
+  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  DEPLOY_ENV: "production|qa|staging" # replace with actual value
+
+concurrency: 
+  group: eng-yaml
+  cancel-in-progress: false
+
+jobs:
+  PROVISION-ENVIRONMENT:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout environment source code # OPTIONAL If environment provisiong needs scripts from repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - id: PROVISION-ENVIRONMENT
+        name: Provision environment for this container
+        run: echo "provision environment" # replace with actual code
+  DEPLOY:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: DEPLOY
+        name: Deploy the application
+        run: echo "deploy to $DEPLOY_ENV environment" # replace with actual code
+  INTEGRATION-TEST:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:        
+      - id: INTEGRATION-TEST
+      - name: Run integration tests on container
+        run: echo "run integration test" # replace with actual code
+  HEALTH-CHECK:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+    - id: health-check
+      name: Check the deployed service
+      uses: trilogy-group/eng.cicd.yaml.templates/actions/healthcheck-httpStatus@master
+      with:
+        # Check the following URLs one by one sequentially
+        url: https://www.google.com
+        # Follow redirects, or just report success on 3xx status codes
+        follow-redirect: false # Optional, defaults to "false"
+        # Fail this action after this many failed attempts
+        max-attempts: 3 # Optional, defaults to 1
+        # Delay between retries
+        retry-delay: 5s # Optional, only applicable to max-attempts > 1
+        # Retry all errors, including 404. This option might trigger curl upgrade.
+        retry-all: false # Optional, defaults to "false"
+        # timeout delay in seconds
+        timeout: 30s
